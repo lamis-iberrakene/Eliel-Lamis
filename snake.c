@@ -60,7 +60,7 @@ void GenerateFruit(Fruit *fruit, int cols, int rows, Snake s1, Snake s2, Vector2
         fruit->color = BLUE;
         fruit->scoreValue = 20;
     } else {
-        fruit->color = BLACK;  // ARC-EN-CIEL utilisé pour ce type
+        fruit->color = BLACK;
         fruit->scoreValue = -10;
     }
 }
@@ -104,6 +104,8 @@ int main(void) {
     bool winner = false;
     int mode = 0;
 
+    int chehTimer = 0; // Durée d'affichage du message "cheh -10"
+
     while (!WindowShouldClose()) {
         if (gameState == MENU) {
             if (IsKeyPressed(KEY_ONE)) {
@@ -115,6 +117,7 @@ int main(void) {
                 }
                 wallCount = 0;
                 GenerateFruit(&fruit, cols, rows, player1, player2, walls, wallCount);
+                chehTimer = 0;
             } else if (IsKeyPressed(KEY_TWO)) {
                 mode = 2;
                 gameState = DUO;
@@ -126,6 +129,7 @@ int main(void) {
                 }
                 wallCount = 0;
                 GenerateFruit(&fruit, cols, rows, player1, player2, walls, wallCount);
+                chehTimer = 0;
             }
 
             BeginDrawing();
@@ -163,10 +167,8 @@ int main(void) {
                 if (mode == 2) {
                     for (int i = player2.length - 1; i > 0; i--) player2.body[i] = player2.body[i - 1];
                     player2.body[0].x += player2.direction.x;
-                    player2.body[0].y += player2.direction.y;
                 }
 
-                // collisions
                 for (int i = 1; i < player1.length; i++) if (Vector2IntEquals(player1.body[0], player1.body[i])) gameState = GAME_OVER;
                 if (player1.body[0].x < 0 || player1.body[0].x >= cols || player1.body[0].y < 0 || player1.body[0].y >= rows) gameState = GAME_OVER;
                 if (IsOnWalls(player1.body[0], walls, wallCount)) gameState = GAME_OVER;
@@ -183,6 +185,7 @@ int main(void) {
                 if (Vector2IntEquals(player1.body[0], fruit.position)) {
                     if (player1.length < MAX_SNAKE_LENGTH) player1.length++;
                     player1.score += fruit.scoreValue;
+                    if (fruit.scoreValue == -10) chehTimer = 30;
                     if (ColorToInt(fruit.color) == ColorToInt(BLUE)) player1.speedBoostTimer = 50;
                     if (player1.score < 0) player1.score = 0;
                     GenerateFruit(&fruit, cols, rows, player1, player2, walls, wallCount);
@@ -192,11 +195,14 @@ int main(void) {
                 if (mode == 2 && Vector2IntEquals(player2.body[0], fruit.position)) {
                     if (player2.length < MAX_SNAKE_LENGTH) player2.length++;
                     player2.score += fruit.scoreValue;
+                    if (fruit.scoreValue == -10) chehTimer = 30;
                     if (ColorToInt(fruit.color) == ColorToInt(BLUE)) player2.speedBoostTimer = 50;
                     if (player2.score < 0) player2.score = 0;
                     GenerateFruit(&fruit, cols, rows, player1, player2, walls, wallCount);
                     if (player2.score / 20 > wallCount && wallCount < MAX_WALLS) GenerateWalls(walls, &wallCount, MAX_WALLS, player1, player2, fruit, cols, rows);
                 }
+
+                if (chehTimer > 0) chehTimer--;
             }
         }
 
@@ -210,7 +216,6 @@ int main(void) {
             DrawRectangle(walls[i].x * CELL_SIZE, walls[i].y * CELL_SIZE, CELL_SIZE, CELL_SIZE, GRAY);
         }
 
-        // Fruit
         if (fruit.scoreValue == -10) {
             DrawRainbowFruit(fruit.position);
         } else {
@@ -230,6 +235,10 @@ int main(void) {
 
         DrawText(TextFormat("Score P1: %d", player1.score), 10, 10, 20, BLACK);
         if (mode == 2) DrawText(TextFormat("Score P2: %d", player2.score), screenWidth - 160, 10, 20, BLACK);
+
+        if (chehTimer > 0) {
+            DrawText("cheh -10", screenWidth / 2 - 50, screenHeight / 2 - 100, 30, RED);
+        }
 
         if (gameState == PAUSE) {
             DrawText("PAUSE", screenWidth / 2 - 50, screenHeight / 2 - 40, 40, RED);
